@@ -74,7 +74,7 @@ const JobDetail = () => {
 
     const handleApplyClick = async () => {
         if (!token) {
-            navigate('/login');
+            navigate('/auth');
             return;
         }
         if (role !== 'user') {
