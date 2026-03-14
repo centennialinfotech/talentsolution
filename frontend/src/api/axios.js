@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://ci-indeed-jp-new.onrender.com/api',
+  baseURL: 'https://talentsolution.onrender.com/api',
   headers: {
     'Content-Type': 'application/json',
   },
