@@ -20,9 +20,9 @@ const app = express();
 
 // Middleware
 app.use(helmet());
+
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000', 'https://centennial-infotech-hiring.netlify.app', 'https://talentsolution.onrender.com'], // Or simply '*' but explicit is safer
-    credentials: true,
+    origin: "*",
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
