@@ -20,13 +20,23 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:5173', 'http://localhost:3000', 'https://centennial-infotech-hiring.netlify.app', 'https://talentsolution.onrender.com'], // Or simply '*' but explicit is safer
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 
 // Basic Route
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to Job Portal API' });
+});
+
+// Health API Endpoint
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok', message: 'API is healthy and running' });
 });
 
 // Routes
