@@ -54,6 +54,8 @@ const JobDetail = () => {
     const [applying, setApplying] = useState(false);
     const [applyError, setApplyError] = useState('');
     const [applySuccess, setApplySuccess] = useState('');
+    const [uploadingResume, setUploadingResume] = useState(false);
+    const fileInputRef = React.useRef(null);
 
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
@@ -101,6 +103,49 @@ const JobDetail = () => {
         setShowModal(true);
         setApplyError('');
         setApplySuccess('');
+        setUploadingResume(false);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Basic validation
+        if (file.size > 5 * 1024 * 1024) {
+             setApplyError('File size must be less than 5MB');
+             return;
+        }
+
+        const formData = new FormData();
+        formData.append('resume', file);
+
+        setUploadingResume(true);
+        setApplyError('');
+        
+        try {
+            // Include token to bypass protect middleware if needed
+            const response = await api.post('/upload/resume', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            setApplicationForm(prev => ({
+                ...prev,
+                resume_url: response.data.url
+            }));
+            setApplySuccess('Resume uploaded successfully!');
+            setTimeout(() => setApplySuccess(''), 3000);
+        } catch (err) {
+            setApplyError(err.response?.data?.message || 'Failed to upload resume');
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        } finally {
+            setUploadingResume(false);
+        }
     };
 
     const handleApplicationSubmit = async (e) => {
@@ -468,17 +513,32 @@ const JobDetail = () => {
                                 </div>
 
                                 <div className="text-left">
-                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Resume URL</label>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Resume Document (PDF/DOC)</label>
                                     <div className="relative">
                                         <FileText className="absolute left-3 top-2 w-5 h-5 text-slate-300" />
-                                        <input
-                                            required
-                                            className="input-field pl-11 py-2 px-3 text-left"
-                                            placeholder="https://link-to-your-resume.pdf"
-                                            value={applicationForm.resume_url}
-                                            onChange={(e) => setApplicationForm({ ...applicationForm, resume_url: e.target.value })}
-                                        />
+                                        <div className="flex gap-2">
+                                            <input
+                                                required={!applicationForm.resume_url}
+                                                type="file"
+                                                accept=".pdf,.doc,.docx"
+                                                ref={fileInputRef}
+                                                onChange={handleFileUpload}
+                                                className="input-field pl-11 py-2 px-3 text-left file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-primary-50 file:text-primary-600 hover:file:bg-primary-100 cursor-pointer"
+                                            />
+                                        </div>
                                     </div>
+                                    {uploadingResume && (
+                                        <p className="text-xs text-primary-500 font-medium mt-2 flex items-center">
+                                            <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                                            Uploading resume securely...
+                                        </p>
+                                    )}
+                                    {applicationForm.resume_url && !uploadingResume && (
+                                        <p className="text-xs text-green-500 font-medium mt-2 flex items-center">
+                                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                                            Resume URL attached
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="text-left">
@@ -494,7 +554,7 @@ const JobDetail = () => {
 
                                 <button
                                     type="submit"
-                                    disabled={applying || applySuccess}
+                                    disabled={applying || applySuccess === 'Application submitted successfully!' || uploadingResume || !applicationForm.resume_url}
                                     className="w-full btn-premium btn-premium-primary py-4 text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center space-x-2 shadow-xl shadow-primary-200"
                                 >
                                     {applying ? <Loader2 className="w-6 h-6 animate-spin" /> : (

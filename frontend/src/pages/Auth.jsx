@@ -8,10 +8,10 @@ const Auth = () => {
     const [searchParams] = useSearchParams();
     const initialRole = searchParams.get('role') === 'admin' ? 'admin' : 'user';
     const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login';
-    
+
     const [role, setRole] = useState(initialRole); // 'user' (Job Seeker) or 'admin' (Recruiter)
     const [mode, setMode] = useState(initialMode); // 'login' or 'signup'
-    
+
     const [formData, setFormData] = useState({
         first_name: '',
         last_name: '',
@@ -19,7 +19,7 @@ const Auth = () => {
         phone: '',
         password: '',
     });
-    
+
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -155,7 +155,7 @@ const Auth = () => {
                                 <motion.div
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    className="mb-8 flex items-center space-x-3 text-red-600 bg-red-50 p-4 rounded-2xl border border-red-100"
+                                    className="mb-8 flex items-center space-x-3 text-hd-600 bg-red-50 p-4 rounded-2xl border border-red-100"
                                 >
                                     <AlertCircle className="w-5 h-5 flex-shrink-0" />
                                     <span className="text-sm font-bold">{error}</span>
