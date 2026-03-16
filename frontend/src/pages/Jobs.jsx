@@ -326,7 +326,7 @@ const Jobs = () => {
                                                 </p>
                                                 <Link
                                                     to={`/jobs/${job._id}`}
-                                                    className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg text-sm font-bold flex items-center space-x-2 transition-colors"
+                                                    className="text-slate-900 hover:text-primary-600 border border-slate-200 hover:border-primary-600 bg-white hover:bg-slate-50 py-2 px-6 rounded-lg text-sm font-bold flex items-center space-x-2 transition-colors"
                                                 >
                                                     <span>View detail</span>
                                                     <ArrowRight className="w-4 h-4" />
