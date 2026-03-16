@@ -324,13 +324,13 @@ const Jobs = () => {
                                                 <p className="text-slate-500 text-sm line-clamp-2 max-w-lg">
                                                     {job.description}
                                                 </p>
-                                                <button
-                                                    onClick={() => handleApplyClick(job)}
-                                                    className="btn-primary py-2 px-6 text-sm font-bold flex items-center space-x-2"
+                                                <Link
+                                                    to={`/jobs/${job._id}`}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg text-sm font-bold flex items-center space-x-2 transition-colors"
                                                 >
-                                                    <span>Apply Now</span>
+                                                    <span>View detail</span>
                                                     <ArrowRight className="w-4 h-4" />
-                                                </button>
+                                                </Link>
                                             </div>
                                         </motion.div>
                                     ))}

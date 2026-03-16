@@ -13,8 +13,7 @@ exports.uploadResume = async (req, res) => {
         const stream = cloudinary.uploader.upload_stream(
             { 
                 folder: 'resumes', 
-                resource_type: 'raw', // Use raw for PDF and documents
-                format: 'pdf',        // Force format to pdf
+                resource_type: 'auto',
                 public_id: `resume_${Date.now()}`
             },
             (error, result) => {
