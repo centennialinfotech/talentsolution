@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
-import { Plus, Briefcase, Users, Eye, Edit, Trash2, Loader2, X, MapPin, DollarSign, Clock, GraduationCap, Phone, Mail, FileText, Building2, CheckCircle2, ArrowRight, Globe } from 'lucide-react';
+import { Plus, Briefcase, Users, Eye, Edit, Trash2, Loader2, X, MapPin, DollarSign, Clock, GraduationCap, Phone, Download, Mail, FileText, Building2, CheckCircle2, ArrowRight, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import InrLogo from '../assets/inr-logo.jpg';
 
@@ -701,12 +701,12 @@ const AdminDashboard = () => {
                                                     </div>
                                                     <div className="flex gap-4">
                                                         <a
-                                                            href={app.resume_url}
+                                                            href={app.resume_url?.replace('/image/upload/', '/raw/upload/')}
                                                             target="_blank"
                                                             rel="noreferrer"
                                                             className="text-primary-600 text-sm font-bold hover:underline flex items-center gap-1"
                                                         >
-                                                            <FileText className="w-4 h-4" /> CV
+                                                            <FileText className="w-4 h-4" /> View CV
                                                         </a>
                                                     </div>
                                                 </div>

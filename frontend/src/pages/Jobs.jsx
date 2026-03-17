@@ -37,6 +37,7 @@ const Jobs = () => {
     const [applying, setApplying] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [successToast, setSuccessToast] = useState(false);
     const [uploadingResume, setUploadingResume] = useState(false);
     const fileInputRef = React.useRef(null);
 
@@ -154,13 +155,16 @@ const Jobs = () => {
                 job_id: selectedJob._id,
                 ...applicationForm
             });
-            alert('Application submitted successfully!');
             setSuccess('Application submitted successfully!');
+            setSuccessToast(true);
             setTimeout(() => {
                 setShowModal(false);
                 setApplicationForm({ resume_url: '', cover_letter: '' });
                 setSelectedJob(null);
             }, 2000);
+            setTimeout(() => {
+                setSuccessToast(false);
+            }, 5000);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to submit application');
         } finally {
@@ -487,6 +491,23 @@ const Jobs = () => {
                                     )}
                                 </button>
                             </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Success Toast Overlay */}
+            <AnimatePresence>
+                {successToast && (
+                    <div className="fixed bottom-10 right-10 z-[300]">
+                        <motion.div
+                            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                            className="bg-green-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold"
+                        >
+                            <CheckCircle2 className="w-6 h-6" />
+                            Application Submitted Successfully!
                         </motion.div>
                     </div>
                 )}
