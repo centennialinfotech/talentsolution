@@ -157,6 +157,7 @@ const JobDetail = () => {
                 job_id: job._id,
                 ...applicationForm
             });
+            alert('Application submitted successfully!');
             setApplySuccess('Application submitted successfully!');
             setTimeout(() => {
                 setShowModal(false);

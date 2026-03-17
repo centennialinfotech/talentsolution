@@ -154,6 +154,7 @@ const Jobs = () => {
                 job_id: selectedJob._id,
                 ...applicationForm
             });
+            alert('Application submitted successfully!');
             setSuccess('Application submitted successfully!');
             setTimeout(() => {
                 setShowModal(false);
