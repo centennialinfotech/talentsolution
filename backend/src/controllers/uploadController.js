@@ -15,21 +15,18 @@ exports.uploadResume = async (req, res) => {
         const stream = cloudinary.uploader.upload_stream(
             { 
                 folder: 'resumes', 
-                resource_type: 'raw',
-                public_id: `resume_${Date.now()}.${ext}`
+                resource_type: 'auto',
+                public_id: `resume_${Date.now()}`
             },
             (error, result) => {
                 if (error) {
                     console.error('Cloudinary upload error:', error);
                     return res.status(500).json({ message: 'Error uploading to Cloudinary' });
                 }
-                // Cloudinary returns secure_url which might default to /image/upload/ for PDFs sometimes if not careful,
-                // so we explicitly format it to /raw/upload/ to ensure PDF accessibility
-                const rawUrl = result.secure_url.replace('/image/upload/', '/raw/upload/');
                 
                 res.status(200).json({
                     message: 'Upload successful',
-                    url: rawUrl,
+                    url: result.secure_url,
                     public_id: result.public_id
                 });
             }

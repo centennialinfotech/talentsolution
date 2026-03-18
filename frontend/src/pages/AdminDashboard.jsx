@@ -701,7 +701,7 @@ const AdminDashboard = () => {
                                                     </div>
                                                     <div className="flex gap-4">
                                                         <a
-                                                            href={app.resume_url?.replace('/image/upload/', '/raw/upload/')}
+                                                            href={app.resume_url}
                                                             target="_blank"
                                                             rel="noreferrer"
                                                             className="text-primary-600 text-sm font-bold hover:underline flex items-center gap-1"
