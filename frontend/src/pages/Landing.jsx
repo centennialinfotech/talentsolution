@@ -81,69 +81,37 @@ const Landing = () => {
     return (
         <div className="overflow-x-hidden pt-8 md:pt-12">
             {/* Hero Section */}
-            <section className="relative min-h-[85vh] flex items-center pt-8 md:pt-10 pb-16 overflow-hidden">
-                {/* Glow effects pushed further back */}
-                <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-primary-200/20 rounded-full blur-[150px] z-[-1]"></div>
-                <div className="absolute bottom-[10%] right-[10%] w-[500px] h-[500px] bg-accent-blue/10 rounded-full blur-[150px] z-[-1]"></div>
-
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
-                    <div className="grid lg:grid-cols-2 gap-8 items-center">
-                        <div className="max-w-3xl">
-                            <motion.h1
-                                initial={{ opacity: 0, y: 30 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.8, delay: 0.3 }}
-                                className="text-6xl md:text-8xl font-black text-slate-900 leading-[1.05] mb-6 tracking-tighter"
-                            >
-                                Connect with <br />
-                                <span className="text-gradient">Elite Talent</span> <br />
-                                Instantly.
-                            </motion.h1>
-
-                            <motion.p
-                                initial={{ opacity: 0, y: 30 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.8, delay: 0.4 }}
-                                className="text-xl text-slate-500 mb-10 leading-relaxed max-w-xl font-medium"
-                            >
-                                Premium engineering services by Centennial Talent Solutions.
-                                From UI/UX to IT Consulting, we build the tech that powers the future.
-                            </motion.p>
-
-                            <motion.div
-                                initial={{ opacity: 0, y: 30 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.8, delay: 0.5 }}
-                                className="flex flex-col sm:flex-row items-center gap-6"
-                            >
-                                <Link to="/jobs" className="w-full sm:w-auto btn-premium btn-premium-primary text-lg px-10 group">
-                                    Explore Careers
-                                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                </Link>
-                                <Link to="/auth?mode=signup&role=admin" className="w-full sm:w-auto btn-premium btn-premium-outline text-lg px-10">
-                                    Hire Top Talent
-                                </Link>
-                            </motion.div>
+            <section className="pt-32 lg:pt-48 pb-20 overflow-hidden">
+                <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                        className="relative z-10"
+                    >
+                        <h1 className="text-5xl lg:text-7xl font-extrabold text-brand-navy leading-tight mb-6 tracking-tight">
+                            Connect <br />with <span className="text-brand-blue">Elite</span> <br />Talent <br />Instantly.
+                        </h1>
+                        <p className="text-lg text-text-muted mb-10 max-w-lg leading-relaxed">
+                            Recruitment agencies directly connect with Elite Solutions. From SMBs to Fortune, we find the highest quality talent for the jobs of the future.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <Link to="/jobs" className="bg-brand-blue text-white px-8 py-4 rounded-full font-semibold hover:bg-brand-blue/90 transition-all shadow-md text-center inline-block">Explore Careers</Link>
+                            <Link to="/auth?mode=signup&role=admin" className="border-2 border-brand-navy text-brand-navy px-8 py-4 rounded-full font-semibold hover:bg-brand-navy hover:text-white transition-all text-center inline-block">Post a Talent</Link>
                         </div>
-
-                        {/* Hero Image Section - Separate from text on large screens */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            transition={{ duration: 1, delay: 0.3 }}
-                            className="relative mt-16 lg:mt-0"
-                        >
-                            <div className="relative z-10 w-full max-w-2xl mx-auto">
-                                <img
-                                    src={heroBg}
-                                    alt="Network Visual"
-                                    className="w-full h-auto object-contain animate-float drop-shadow-[0_20px_50px_rgba(79,70,229,0.2)]"
-                                />
-                            </div>
-                            {/* Decorative glow behind image */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4/5 h-4/5 bg-primary-400/20 blur-[120px] rounded-full z-0"></div>
-                        </motion.div>
-                    </div>
+                    </motion.div>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 1 }}
+                        className="relative"
+                    >
+                        <div className="absolute -top-20 -right-20 w-96 h-96 bg-brand-light/10 rounded-full blur-3xl"></div>
+                        <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-brand-blue/10 rounded-full blur-3xl"></div>
+                        <div className="relative z-10 rounded-3xl overflow-hidden shadow-2xl transform lg:rotate-2 hover:rotate-0 transition-transform duration-500">
+                            <img src={heroBg} alt="Elite Talent Network" className="w-full h-auto object-cover" />
+                        </div>
+                    </motion.div>
                 </div>
             </section>
 
