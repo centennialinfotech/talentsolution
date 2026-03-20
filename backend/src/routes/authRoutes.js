@@ -7,7 +7,9 @@ const {
     loginAdmin,
     getUserProfileById,
     getProfile,
-    updateProfile
+    updateProfile,
+    verifyEmail,
+    resetPassword
 } = require('../controllers/authController');
 
 const { protect } = require('../middleware/authMiddleware');
@@ -22,5 +24,9 @@ router.put('/user/profile', protect, updateProfile);
 router.post('/admin/signup', registerAdmin);
 router.post('/admin/login', loginAdmin);
 router.get('/user/:id', protect, getUserProfileById);
+
+// Forgot Password Routes
+router.post('/forgot-password/verify-email', verifyEmail);
+router.post('/forgot-password/reset', resetPassword);
 
 module.exports = router;

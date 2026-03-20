@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
 import { User, Mail, Phone, Lock, Sparkles, AlertCircle, Loader2, CheckCircle2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 const Auth = () => {
     const [searchParams] = useSearchParams();
@@ -11,6 +12,7 @@ const Auth = () => {
 
     const [role, setRole] = useState(initialRole); // 'user' (Job Seeker) or 'admin' (Recruiter)
     const [mode, setMode] = useState(initialMode); // 'login' or 'signup'
+    const [fpStep, setFpStep] = useState(1); // 1: email, 2: OTP, 3: new password
 
     const [formData, setFormData] = useState({
         first_name: '',
@@ -18,6 +20,8 @@ const Auth = () => {
         email: '',
         phone: '',
         password: '',
+        confirm_password: '',
+        otp: '',
     });
 
     const [error, setError] = useState('');
@@ -35,6 +39,43 @@ const Auth = () => {
         setError('');
 
         try {
+            if (mode === 'forgot_password') {
+                if (fpStep === 1) {
+                    const { data } = await api.post('/auth/forgot-password/verify-email', {
+                        email: formData.email
+                    });
+                    if (data.success) {
+                        toast.success('OTP sent to your email');
+                        setFpStep(2);
+                    }
+                    return;
+                } else if (fpStep === 2) {
+                    if (formData.otp === '123456') {
+                        toast.success('OTP Verified');
+                        setFpStep(3);
+                    } else {
+                        setError('Invalid OTP. Please enter 123456');
+                    }
+                    return;
+                } else if (fpStep === 3) {
+                    if (formData.password !== formData.confirm_password) {
+                        setError("Passwords do not match.");
+                        return;
+                    }
+                    const { data } = await api.post('/auth/forgot-password/reset', {
+                        email: formData.email,
+                        password: formData.password
+                    });
+                    if (data.success) {
+                        toast.success('Password changed successfully!');
+                        setMode('login');
+                        setFpStep(1);
+                        setFormData({ ...formData, password: '', confirm_password: '', otp: '' });
+                    }
+                    return;
+                }
+            }
+
             let endpoint = '';
             let payload = {};
 
@@ -267,10 +308,149 @@ const Auth = () => {
 
                             <p className="mt-10 text-center text-slate-600 font-medium">
                                 Already have an account?{' '}
-                                <button type="button" onClick={() => { setMode('login'); setError(''); }} className="text-primary-600 font-black hover:text-accent-blue transition-colors underline decoration-2 underline-offset-4">Log in</button>
+                                <button type="button" onClick={() => { setMode('login'); setError(''); setFpStep(1); }} className="text-primary-600 font-black hover:text-accent-blue transition-colors underline decoration-2 underline-offset-4">Log in</button>
                             </p>
                         </div>
                     </div>
+                ) : mode === 'forgot_password' ? (
+                    // Forgot Password Mode View
+                    <>
+                        <div className="text-center mb-10">
+                            <h2 className="text-4xl font-black text-slate-900 tracking-tight">Reset Password</h2>
+                            <p className="text-slate-500 mt-3 font-medium">
+                                {fpStep === 1 && "Enter your email to receive an OTP"}
+                                {fpStep === 2 && "Enter the OTP sent to your email"}
+                                {fpStep === 3 && "Enter your new password"}
+                            </p>
+                        </div>
+
+                        <div className="glass shadow-premium rounded-[2.5rem] p-10 relative overflow-hidden bg-white">
+                            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary-500 via-accent-cyan to-accent-blue"></div>
+
+                            {error && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="mb-6 flex items-center space-x-3 text-red-600 bg-red-50 p-4 rounded-2xl border border-red-100"
+                                >
+                                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                                    <span className="text-sm font-bold">{error}</span>
+                                </motion.div>
+                            )}
+
+                            <form onSubmit={handleAuth} className="space-y-6">
+                                {fpStep === 1 && (
+                                    <div>
+                                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Email Address</label>
+                                        <div className="relative group">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 group-focus-within:text-primary-600 text-slate-400">
+                                                <Mail className="w-5 h-5 " />
+                                            </div>
+                                            <input
+                                                name="email"
+                                                type="email"
+                                                required
+                                                className="w-full bg-slate-50/50 border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-medium"
+                                                placeholder="you@example.com"
+                                                value={formData.email}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {fpStep === 2 && (
+                                    <div>
+                                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Enter OTP</label>
+                                        <div className="relative group">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 group-focus-within:text-primary-600 text-slate-400">
+                                                <Sparkles className="w-5 h-5 " />
+                                            </div>
+                                            <input
+                                                name="otp"
+                                                type="text"
+                                                required
+                                                className="w-full bg-slate-50/50 border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-medium tracking-widest"
+                                                placeholder="123456"
+                                                value={formData.otp}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {fpStep === 3 && (
+                                    <>
+                                        <div>
+                                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 text-left">New Password</label>
+                                            <div className="relative group">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 group-focus-within:text-primary-600 text-slate-400">
+                                                    <Lock className="w-5 h-5" />
+                                                </div>
+                                                <input
+                                                    name="password"
+                                                    type={showPassword ? 'text' : 'password'}
+                                                    required
+                                                    className="w-full bg-slate-50/50 border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-12 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-medium"
+                                                    placeholder="••••••••"
+                                                    value={formData.password}
+                                                    onChange={handleChange}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary-600 transition-colors duration-300"
+                                                >
+                                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 text-left">Confirm Password</label>
+                                            <div className="relative group">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 group-focus-within:text-primary-600 text-slate-400">
+                                                    <Lock className="w-5 h-5" />
+                                                </div>
+                                                <input
+                                                    name="confirm_password"
+                                                    type={showPassword ? 'text' : 'password'}
+                                                    required
+                                                    className="w-full bg-slate-50/50 border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-12 outline-none focus:border-primary-500 focus:bg-white transition-all duration-300 font-medium"
+                                                    placeholder="••••••••"
+                                                    value={formData.confirm_password}
+                                                    onChange={handleChange}
+                                                />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full btn-premium btn-premium-primary py-4 group"
+                                >
+                                    {loading ? (
+                                        <Loader2 className="w-6 h-6 animate-spin" />
+                                    ) : (
+                                        <span className="flex items-center space-x-2">
+                                            <span>
+                                                {fpStep === 1 ? 'Send OTP' : fpStep === 2 ? 'Verify OTP' : 'Reset Password'}
+                                            </span>
+                                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                        </span>
+                                    )}
+                                </button>
+                            </form>
+
+                            <div className="mt-10 pt-8 border-t border-slate-100 flex flex-col items-center">
+                                <button type="button" onClick={() => { setMode('login'); setError(''); setFpStep(1); }} className="text-slate-500 hover:text-primary-600 transition-colors font-bold text-sm">
+                                    &larr; Back to log in
+                                </button>
+                            </div>
+                        </div>
+                    </>
                 ) : (
                     // Login Mode View
                     <>
@@ -353,6 +533,12 @@ const Auth = () => {
                                             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                         </button>
                                     </div>
+                                </div>
+                                
+                                <div className="flex justify-end !mt-2">
+                                    <button type="button" onClick={() => { setMode('forgot_password'); setError(''); setFpStep(1); }} className="text-sm text-primary-600 font-bold hover:text-accent-blue transition-colors">
+                                        Forgot Password?
+                                    </button>
                                 </div>
 
                                 <button

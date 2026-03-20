@@ -188,7 +188,64 @@ exports.updateProfile = async (req, res) => {
         console.error('Update Profile Error:', error);
         res.status(500).json({ message: error.message });
     }
-};// @desc    Get user profile by ID (Admin only)
+};// @desc    Verify email for password reset
+// @route   POST /api/auth/forgot-password/verify-email
+// @access  Public
+exports.verifyEmail = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
+
+        let user = await User.findOne({ email });
+        let foundRole = 'user';
+
+        if (!user) {
+            user = await Admin.findOne({ email });
+            foundRole = 'admin';
+        }
+
+        if (!user) {
+            return res.status(404).json({ message: 'No account found with this email' });
+        }
+
+        res.json({ success: true, message: 'Email verified', role: foundRole });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Reset password
+// @route   POST /api/auth/forgot-password/reset
+// @access  Public
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Email and new password are required' });
+        }
+
+        let user = await User.findOne({ email });
+
+        if (!user) {
+            user = await Admin.findOne({ email });
+        }
+
+        if (!user) {
+            return res.status(404).json({ message: 'No account found with this email' });
+        }
+
+        user.password = password;
+        await user.save(); // The pre-save hook will hash the password
+
+        res.json({ success: true, message: 'Password reset successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get user profile by ID (Admin only)
 // @route   GET /api/auth/user/:id
 // @access  Private/Admin
 exports.getUserProfileById = async (req, res) => {

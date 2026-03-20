@@ -6,6 +6,7 @@ import Jobs from './pages/Jobs';
 import Landing from './pages/Landing';
 import AdminDashboard from './pages/AdminDashboard';
 import UserApplications from './pages/UserApplications';
+import { Toaster } from 'react-hot-toast';
 
 import Profile from './pages/Profile';
 import JobDetail from './pages/JobDetail';
@@ -26,6 +27,7 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-slate-50">
+        <Toaster position="top-right" />
         <Navbar />
         <Routes>
           <Route path="/" element={<Landing />} />
