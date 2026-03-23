@@ -33,6 +33,99 @@ const Auth = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    React.useEffect(() => {
+        if (window.AppleID) {
+            window.AppleID.auth.init({
+                clientId: import.meta.env.VITE_APPLE_CLIENT_ID || 'com.example.apple',
+                scope: 'name email',
+                redirectURI: import.meta.env.VITE_APPLE_REDIRECT_URI || 'https://example.com/callback',
+                state: 'init',
+                usePopup: true
+            });
+        }
+    }, []);
+
+    const handleGoogleLogin = () => {
+        if (!window.google) return toast.error('Google Script not loaded');
+        const client = window.google.accounts.oauth2.initTokenClient({
+            client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy_client_id.apps.googleusercontent.com',
+            scope: 'email profile',
+            callback: async (response) => {
+                if (response.error) {
+                    return setError('Google Login Failed');
+                }
+                setLoading(true);
+                setError('');
+                try {
+                    const infoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                        headers: { Authorization: `Bearer ${response.access_token}` }
+                    });
+                    const info = await infoRes.json();
+
+                    const { data } = await api.post('/auth/social-login', {
+                        email: info.email,
+                        first_name: info.given_name || 'Google',
+                        last_name: info.family_name || 'User',
+                        provider: 'Google',
+                        provider_id: info.sub,
+                        current_role: role
+                    });
+
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('role', data.role);
+                    localStorage.setItem('name', data.name);
+
+                    toast.success('Successfully authenticated with Google!');
+                    navigate(data.role === 'admin' ? '/admin/dashboard' : '/jobs');
+                } catch (err) {
+                    setError(err.response?.data?.message || 'Failed to authenticate with Google.');
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+        client.requestAccessToken();
+    };
+
+    const handleAppleLogin = async () => {
+        if (!window.AppleID) return toast.error('Apple Script not loaded');
+        try {
+            const response = await window.AppleID.auth.signIn();
+            setLoading(true);
+            setError('');
+
+            const token = response.authorization.id_token;
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+            const payload = JSON.parse(jsonPayload);
+
+            const user = response.authorization.user;
+
+            const { data } = await api.post('/auth/social-login', {
+                email: payload.email,
+                first_name: user ? user.name.firstName : 'Apple',
+                last_name: user ? user.name.lastName : 'User',
+                provider: 'Apple',
+                provider_id: payload.sub,
+                current_role: role
+            });
+
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('role', data.role);
+            localStorage.setItem('name', data.name);
+
+            toast.success('Successfully authenticated with Apple!');
+            navigate(data.role === 'admin' ? '/admin/dashboard' : '/jobs');
+        } catch (err) {
+            if (err.error !== 'popup_closed_by_user') {
+                setError('Apple Login failed. Please check credentials configuration.');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleAuth = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -306,6 +399,41 @@ const Auth = () => {
                                 </button>
                             </form>
 
+                            <div className="mt-8">
+                                <div className="relative">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-slate-200"></div>
+                                    </div>
+                                    <div className="relative flex justify-center text-sm">
+                                        <span className="px-2 bg-white text-slate-500 font-bold uppercase tracking-wider">Or continue with</span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 grid grid-cols-2 gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={handleGoogleLogin}
+                                        className="w-full flex items-center justify-center px-4 py-3 border-2 border-slate-100 rounded-xl hover:bg-slate-50 transition-colors duration-300 font-bold text-slate-700 bg-white"
+                                    >
+                                        <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                                        </svg>
+                                        Google
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleAppleLogin}
+                                        className="w-full flex items-center justify-center px-4 py-3 border-2 border-slate-100 rounded-xl hover:bg-slate-50 transition-colors duration-300 font-bold text-slate-700 bg-white"
+                                    >
+                                        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 384 512"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" /></svg>
+                                        Apple
+                                    </button>
+                                </div>
+                            </div>
+
                             <p className="mt-10 text-center text-slate-600 font-medium">
                                 Already have an account?{' '}
                                 <button type="button" onClick={() => { setMode('login'); setError(''); setFpStep(1); }} className="text-primary-600 font-black hover:text-accent-blue transition-colors underline decoration-2 underline-offset-4">Log in</button>
@@ -534,7 +662,7 @@ const Auth = () => {
                                         </button>
                                     </div>
                                 </div>
-                                
+
                                 <div className="flex justify-end !mt-2">
                                     <button type="button" onClick={() => { setMode('forgot_password'); setError(''); setFpStep(1); }} className="text-sm text-primary-600 font-bold hover:text-accent-blue transition-colors">
                                         Forgot Password?
@@ -556,6 +684,33 @@ const Auth = () => {
                                     )}
                                 </button>
                             </form>
+
+                            <div className="mt-8">
+                                <div className="relative">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-slate-200"></div>
+                                    </div>
+                                    <div className="relative flex justify-center text-sm">
+                                        <span className="px-2 bg-white text-slate-500 font-bold uppercase tracking-wider">Or continue with</span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 flex justify-center">
+                                    <button
+                                        type="button"
+                                        onClick={handleGoogleLogin}
+                                        className="w-full flex items-center justify-center px-4 py-3 border-2 border-slate-100 rounded-xl hover:bg-slate-50 transition-colors duration-300 font-bold text-slate-700 bg-white"
+                                    >
+                                        <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                                        </svg>
+                                        Google
+                                    </button>
+                                </div>
+                            </div>
 
                             <div className="mt-10 pt-8 border-t border-slate-100 flex flex-col items-center">
                                 <p className="text-slate-500 font-medium">

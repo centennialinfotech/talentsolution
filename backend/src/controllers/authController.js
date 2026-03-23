@@ -245,6 +245,79 @@ exports.resetPassword = async (req, res) => {
     }
 };
 
+// @desc    Social Login (Google/Apple)
+// @route   POST /api/auth/social-login
+// @access  Public
+exports.socialLogin = async (req, res) => {
+    try {
+        const { email, first_name, last_name, provider, provider_id, current_role } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required from the provider' });
+        }
+
+        // Check if exists in User
+        let user = await User.findOne({ email });
+        if (user) {
+            return res.json({
+                _id: user._id,
+                name: `${user.first_name} ${user.last_name}`,
+                email: user.email,
+                role: 'user',
+                token: generateToken(user._id, 'user'),
+            });
+        }
+
+        // Check if exists in Admin
+        let admin = await Admin.findOne({ email });
+        if (admin) {
+            return res.json({
+                _id: admin._id,
+                name: admin.name,
+                email: admin.email,
+                role: 'admin',
+                token: generateToken(admin._id, 'admin'),
+            });
+        }
+
+        // If neither, register them as new based on current_role
+        const crypto = require('crypto');
+        const randomPassword = crypto.randomBytes(8).toString('hex');
+
+        if (current_role === 'admin') {
+            const newAdmin = await Admin.create({
+                name: `${first_name || ''} ${last_name || ''}`.trim() || 'New Admin',
+                email,
+                password: randomPassword
+            });
+            return res.status(201).json({
+                _id: newAdmin._id,
+                name: newAdmin.name,
+                email: newAdmin.email,
+                role: 'admin',
+                token: generateToken(newAdmin._id, 'admin'),
+            });
+        } else {
+            const newUser = await User.create({
+                first_name: first_name || 'New',
+                last_name: last_name || 'User',
+                email,
+                phone: `+00${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+                password: randomPassword
+            });
+            return res.status(201).json({
+                _id: newUser._id,
+                name: `${newUser.first_name} ${newUser.last_name}`,
+                email: newUser.email,
+                role: 'user',
+                token: generateToken(newUser._id, 'user'),
+            });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc    Get user profile by ID (Admin only)
 // @route   GET /api/auth/user/:id
 // @access  Private/Admin
