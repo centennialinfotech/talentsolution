@@ -116,8 +116,8 @@ const JobDetail = () => {
 
         // Basic validation
         if (file.size > 5 * 1024 * 1024) {
-             setApplyError('File size must be less than 5MB');
-             return;
+            setApplyError('File size must be less than 5MB');
+            return;
         }
 
         const formData = new FormData();
@@ -125,7 +125,7 @@ const JobDetail = () => {
 
         setUploadingResume(true);
         setApplyError('');
-        
+
         try {
             // Include token to bypass protect middleware if needed
             const response = await api.post('/upload/resume', formData, {
@@ -387,13 +387,19 @@ const JobDetail = () => {
                                 </div>
                             </div>
 
-                            <button
-                                onClick={handleApplyClick}
-                                disabled={job.status !== 'open'}
-                                className={`w-full btn-premium ${job.status === 'open' ? 'btn-premium-primary' : 'bg-slate-200 text-slate-400 cursor-not-allowed'} py-5 mt-10 shadow-xl shadow-primary-200`}
-                            >
-                                {job.status === 'open' ? 'Apply Now' : 'Application Closed'}
-                            </button>
+                            {job.applicationCount >= 50 ? (
+                                <div className="w-full py-5 mt-10 bg-slate-100 text-slate-500 font-bold rounded-2xl text-center shadow-inner border border-slate-200">
+                                    2/2 Applications Reached
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={handleApplyClick}
+                                    disabled={job.status !== 'open'}
+                                    className={`w-full btn-premium ${job.status === 'open' ? 'btn-premium-primary' : 'bg-slate-200 text-slate-400 cursor-not-allowed'} py-5 mt-10 shadow-xl shadow-primary-200`}
+                                >
+                                    {job.status === 'open' ? 'Apply Now' : 'Application Closed'}
+                                </button>
+                            )}
                         </motion.div>
 
                         {/* Company Card */}

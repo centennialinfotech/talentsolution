@@ -1,6 +1,7 @@
 const Job = require('../models/Job');
 const Company = require('../models/Company');
 const Skill = require('../models/Skill');
+const Application = require('../models/Application');
 
 // @desc    Create a new job
 // @route   POST /api/jobs
@@ -14,6 +15,22 @@ exports.createJob = async (req, res) => {
             location_state, country, openings_count, application_deadline,
             status, skills_required
         } = req.body;
+
+        const userCreatedAt = req.user.createdAt ? new Date(req.user.createdAt) : new Date();
+        const now = new Date();
+        
+        let monthsPassed = (now.getFullYear() - userCreatedAt.getFullYear()) * 12 + (now.getMonth() - userCreatedAt.getMonth());
+        if (now.getDate() < userCreatedAt.getDate()) {
+            monthsPassed--;
+        }
+        monthsPassed = Math.max(0, monthsPassed);
+        
+        const maxJobsAllowed = 3 + (monthsPassed * 3);
+
+        const jobCount = await Job.countDocuments({ posted_by_admin_id: req.user._id });
+        if (jobCount >= maxJobsAllowed) {
+            return res.status(403).json({ message: `Job posting limit reached. You can only post up to ${maxJobsAllowed} jobs based on your account age.` });
+        }
 
         // Handle arrays (split strings if they come from textarea)
         const parseArray = (input) => {
@@ -98,7 +115,8 @@ exports.getJobById = async (req, res) => {
             .populate('skills_required');
 
         if (job) {
-            res.json(job);
+            const applicationCount = await Application.countDocuments({ job_id: req.params.id });
+            res.json({ ...job.toObject(), applicationCount });
         } else {
             res.status(404).json({ message: 'Job not found' });
         }

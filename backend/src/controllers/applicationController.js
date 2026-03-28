@@ -38,6 +38,12 @@ exports.applyToJob = async (req, res) => {
             return res.status(400).json({ message: 'You have already applied for this job' });
         }
 
+        // Check if application limit is reached
+        const applicationCount = await Application.countDocuments({ job_id });
+        if (applicationCount >= 2) {
+            return res.status(400).json({ message: 'Maximum application limit reached for this job' });
+        }
+
         const application = await Application.create({
             job_id,
             user_id: req.user._id,

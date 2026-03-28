@@ -177,6 +177,7 @@ const AdminDashboard = () => {
                     <p className="text-lg text-slate-500 mt-2">Manage your job listings and track applications</p>
                 </div>
                 <button
+                    disabled={jobs.length >= 3}
                     onClick={() => {
                         setEditingJob(null);
                         setFormData({
@@ -195,19 +196,20 @@ const AdminDashboard = () => {
                         });
                         setShowModal(true);
                     }}
-                    className="btn-primary py-4 px-8 flex items-center justify-center space-x-2 shadow-xl shadow-primary-200"
+                    className={`py-4 px-8 flex items-center justify-center space-x-2 shadow-xl rounded-2xl ${jobs.length >= 3 ? 'bg-slate-300 text-slate-500 cursor-not-allowed border-none' : 'btn-premium btn-premium-primary shadow-primary-200'}`}
                 >
                     <Plus className="w-6 h-6" />
-                    <span className="text-lg font-bold">Post New Job</span>
+                    <span className="text-lg font-bold">{jobs.length >= 3 ? 'Quota Reached' : 'Post New Job'}</span>
                 </button>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
                 {[
                     { label: 'Active Listings', value: jobs.filter(j => j.status === 'open').length, icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
                     { label: 'Total Candidates', value: jobs.reduce((acc, job) => acc + (job.applicationCount || 0), 0), icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
-                    { label: 'Time to Hire', value: '12d', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' }
+                    { label: 'Jobs Posted', value: jobs.length, icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                    { label: 'Quota Remaining', value: Math.max(0, 3 - jobs.length), icon: CheckCircle2, color: 'text-amber-600', bg: 'bg-amber-50' }
                 ].map((stat, i) => (
                     <motion.div
                         key={i}
