@@ -11,6 +11,11 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
+    const [adminStats, setAdminStats] = useState({ maxJobsAllowed: 3, purchased_slots: 0 });
+    const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+    const [slotsToPurchase, setSlotsToPurchase] = useState(1);
+    const [purchaseLoading, setPurchaseLoading] = useState(null);
+    const [paymentLocation, setPaymentLocation] = useState('India');
     const [formData, setFormData] = useState({
         job_id: `JOB${Math.floor(1000 + Math.random() * 9000)}`,
         title: '',
@@ -52,9 +57,142 @@ const AdminDashboard = () => {
         }
     };
 
+    const fetchStats = async () => {
+        try {
+            const { data } = await api.get('/jobs/admin/stats');
+            setAdminStats(data);
+        } catch (err) {
+            console.error('Failed to fetch admin stats', err);
+        }
+    };
+
     useEffect(() => {
         fetchAdminJobs();
+        fetchStats();
+
+        // Detect user location for pricing
+        const detectLocation = async () => {
+            try {
+                const response = await fetch('https://ipapi.co/json/');
+                const data = await response.json();
+                if (data.country_code === 'IN') {
+                    setPaymentLocation('India');
+                } else {
+                    setPaymentLocation('International');
+                }
+            } catch (err) {
+                console.error('Failed to detect location, defaulting to India', err);
+                setPaymentLocation('India');
+            }
+        };
+        detectLocation();
+
+        /* --- CURRENT PAYMENT CODE START --- Title: Production Payment Scripts & Callbacks 
+        // Load Razorpay Script
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.async = true;
+        document.body.appendChild(script);
+
+        // Check for PayPal Redirect
+        const urlParams = new URLSearchParams(window.location.search);
+        const paypalSuccess = urlParams.get('paypal_success');
+        const token = urlParams.get('token');
+        const slotsAdded = urlParams.get('slots');
+
+        if (paypalSuccess === 'true' && token) {
+            handlePayPalCallback(token, slotsAdded);
+        }
+        --- CURRENT PAYMENT CODE END --- */
     }, []);
+
+    /* --- CURRENT PAYMENT CODE START --- Title: Production Payment Handlers 
+    const handlePayPalCallback = async (token, slots) => {
+        try {
+            await api.post('/payment/capture-paypal', { token, slots });
+            alert(`Payment successful via PayPal! You've added ${slots} slots.`);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            fetchStats();
+        } catch (err) {
+            console.error(err);
+            alert('Failed to capture PayPal payment. You may have cancelled or the payment failed.');
+        }
+    };
+
+    const handlePurchaseSlots = async (method) => {
+        setPurchaseLoading(method);
+        try {
+            if (method === 'razorpay') {
+                const { data: order } = await api.post('/payment/create-razorpay-order', { slots: slotsToPurchase });
+                
+                const options = {
+                    key: order.key_id,
+                    amount: order.amount,
+                    currency: "INR",
+                    name: "Centennial Infotech",
+                    description: `Purchase ${slotsToPurchase} job slots`,
+                    order_id: order.id,
+                    handler: async function (response) {
+                        try {
+                            await api.post('/payment/verify-razorpay', {
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                slots: slotsToPurchase
+                            });
+                            alert(`Payment successful via Razorpay! You've added ${slotsToPurchase} slots.`);
+                            setShowPurchaseModal(false);
+                            setSlotsToPurchase(1);
+                            fetchStats();
+                        } catch (err) {
+                            alert('Payment verification failed.');
+                        }
+                    },
+                    prefill: {
+                        name: "Admin User",
+                        email: "admin@example.com",
+                        contact: "9999999999"
+                    },
+                    theme: { color: "#02042b" }
+                };
+                const rzp = new window.Razorpay(options);
+                rzp.open();
+            } else if (method === 'paypal') {
+                const { data } = await api.post('/payment/create-paypal-order', { slots: slotsToPurchase });
+                if (data.approvalUrl) {
+                    window.location.href = data.approvalUrl;
+                } else {
+                    alert('Could not initiate PayPal checkout');
+                    setPurchaseLoading(null);
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.message || 'Payment initiation failed.');
+            setPurchaseLoading(null);
+        } finally {
+            if (method !== 'paypal') {
+                setPurchaseLoading(null);
+            }
+        }
+    };
+    --- CURRENT PAYMENT CODE END --- */
+
+    const handleSandboxPayment = async () => {
+        setPurchaseLoading('sandbox');
+        try {
+            await api.post('/payment/capture-sandbox', { slots: slotsToPurchase });
+            alert(`Sandbox Payment successful! You've added ${slotsToPurchase} slots.`);
+            setShowPurchaseModal(false);
+            setSlotsToPurchase(1);
+            fetchStats();
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.message || 'Sandbox Payment failed.');
+        } finally {
+            setPurchaseLoading(null);
+        }
+    };
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -177,7 +315,7 @@ const AdminDashboard = () => {
                     <p className="text-lg text-slate-500 mt-2">Manage your job listings and track applications</p>
                 </div>
                 <button
-                    disabled={jobs.length >= 3}
+                    disabled={jobs.length >= adminStats.maxJobsAllowed}
                     onClick={() => {
                         setEditingJob(null);
                         setFormData({
@@ -196,10 +334,10 @@ const AdminDashboard = () => {
                         });
                         setShowModal(true);
                     }}
-                    className={`py-4 px-8 flex items-center justify-center space-x-2 shadow-xl rounded-2xl ${jobs.length >= 3 ? 'bg-slate-300 text-slate-500 cursor-not-allowed border-none' : 'btn-premium btn-premium-primary shadow-primary-200'}`}
+                    className={`py-4 px-8 flex items-center justify-center space-x-2 shadow-xl rounded-2xl ${jobs.length >= adminStats.maxJobsAllowed ? 'bg-slate-300 text-slate-500 cursor-not-allowed border-none' : 'btn-premium btn-premium-primary shadow-primary-200'}`}
                 >
                     <Plus className="w-6 h-6" />
-                    <span className="text-lg font-bold">{jobs.length >= 3 ? 'Quota Reached' : 'Post New Job'}</span>
+                    <span className="text-lg font-bold">{jobs.length >= adminStats.maxJobsAllowed ? 'Quota Reached' : 'Post New Job'}</span>
                 </button>
             </div>
 
@@ -209,7 +347,7 @@ const AdminDashboard = () => {
                     { label: 'Active Listings', value: jobs.filter(j => j.status === 'open').length, icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
                     { label: 'Total Candidates', value: jobs.reduce((acc, job) => acc + (job.applicationCount || 0), 0), icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
                     { label: 'Jobs Posted', value: jobs.length, icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                    { label: 'Quota Remaining', value: Math.max(0, 3 - jobs.length), icon: CheckCircle2, color: 'text-amber-600', bg: 'bg-amber-50' }
+                    { label: 'Quota Remaining', value: Math.max(0, adminStats.maxJobsAllowed - jobs.length), icon: CheckCircle2, color: 'text-amber-600', bg: 'bg-amber-50', action: 'add_slots' }
                 ].map((stat, i) => (
                     <motion.div
                         key={i}
@@ -223,7 +361,18 @@ const AdminDashboard = () => {
                         </div>
                         <div>
                             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">{stat.label}</p>
-                            <h3 className="text-3xl font-black text-slate-900">{stat.value}</h3>
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-3xl font-black text-slate-900">{stat.value}</h3>
+                                {stat.action === 'add_slots' && (
+                                    <button 
+                                        onClick={() => setShowPurchaseModal(true)}
+                                        className="p-1.5 bg-amber-100 text-amber-600 rounded-full hover:bg-amber-200 transition-colors shadow-sm"
+                                        title="Purchase more slots"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </motion.div>
                 ))}
@@ -621,10 +770,107 @@ const AdminDashboard = () => {
                             </form>
                         </motion.div>
                     </div>
-                )
-                }
-            </AnimatePresence >
+                )}
+            </AnimatePresence>
 
+            {/* Purchase Slots Modal */}
+            <AnimatePresence>
+                {showPurchaseModal && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            className="bg-white w-full max-w-md rounded-[2.5rem] shadow-premium overflow-hidden border border-slate-200"
+                        >
+                            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
+                                <div>
+                                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Increase Quota</h2>
+                                    <p className="text-slate-400 text-sm font-medium mt-1">Purchase more job slots</p>
+                                </div>
+                                <button
+                                    onClick={() => setShowPurchaseModal(false)}
+                                    className="p-3 hover:bg-slate-100 rounded-2xl text-slate-400 hover:text-slate-600 transition-colors"
+                                >
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+                            
+                            <div className="p-8 space-y-6 bg-slate-50/50">
+                                <div className="space-y-4">
+                                    <label className="block text-sm font-black text-slate-700 uppercase tracking-widest text-center">How many slots do you need?</label>
+                                    <div className="flex items-center justify-center gap-6">
+                                        <button 
+                                            onClick={() => setSlotsToPurchase(Math.max(1, slotsToPurchase - 1))}
+                                            className="w-12 h-12 rounded-full border-2 border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:border-slate-300 transition-all font-bold text-xl"
+                                        >
+                                            -
+                                        </button>
+                                        <span className="text-4xl font-black text-slate-900 w-16 text-center">{slotsToPurchase}</span>
+                                        <button 
+                                            onClick={() => setSlotsToPurchase(slotsToPurchase + 1)}
+                                            className="w-12 h-12 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center hover:bg-primary-100 transition-all font-bold text-xl"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                    <p className="text-center text-slate-500 font-medium">✨ {paymentLocation === 'India' ? '₹50' : '$1'} per slot</p>
+                                </div>
+
+                                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-slate-500 font-medium">Amount Due:</span>
+                                        <span className="text-2xl font-black text-slate-900">{paymentLocation === 'India' ? '₹' : '$'}{slotsToPurchase * (paymentLocation === 'India' ? 50 : 1)}</span>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <button
+                                            disabled={purchaseLoading !== null}
+                                            onClick={handleSandboxPayment}
+                                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-70"
+                                        >
+                                            {purchaseLoading === 'sandbox' ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                                                <>
+                                                    <CheckCircle2 className="w-5 h-5" />
+                                                    Pay with Sandbox Account
+                                                </>
+                                            )}
+                                        </button>
+
+                                        {/* --- CURRENT PAYMENT CODE START --- Title: Production Payment Gateways */}
+                                        {/*
+                                        <button
+                                            disabled={purchaseLoading !== null}
+                                            onClick={() => handlePurchaseSlots('razorpay')}
+                                            className="w-full bg-[#02042b] hover:bg-[#1a1c3d] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-70 mt-4"
+                                        >
+                                            {purchaseLoading === 'razorpay' ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                                                <>
+                                                    <img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Razorpay_logo.svg" alt="Razorpay" className="h-4 brightness-0 invert" />
+                                                    Pay with Razorpay
+                                                </>
+                                            )}
+                                        </button>
+                                        <button
+                                            disabled={purchaseLoading !== null}
+                                            onClick={() => handlePurchaseSlots('paypal')}
+                                            className="w-full bg-[#003087] hover:bg-[#001c52] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-70 mt-3"
+                                        >
+                                            {purchaseLoading === 'paypal' ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                                                <>
+                                                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" className="h-5 brightness-0 invert opacity-90" />
+                                                    Pay with PayPal
+                                                </>
+                                            )}
+                                        </button>
+                                        */}
+                                        {/* --- CURRENT PAYMENT CODE END --- */}
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Applications Modal */}
             < AnimatePresence >

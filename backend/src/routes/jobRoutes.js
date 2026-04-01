@@ -6,7 +6,8 @@ const {
     getJobById,
     updateJob,
     deleteJob,
-    getAdminJobs
+    getAdminJobs,
+    getAdminStats
 } = require('../controllers/jobController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 
@@ -17,6 +18,7 @@ router.get('/:id', getJobById);
 // Admin Only Routes
 router.post('/', protect, adminOnly, createJob);
 router.get('/admin/all', protect, adminOnly, getAdminJobs);
+router.get('/admin/stats', protect, adminOnly, getAdminStats);
 router.put('/:id', protect, adminOnly, updateJob);
 router.delete('/:id', protect, adminOnly, deleteJob);
 

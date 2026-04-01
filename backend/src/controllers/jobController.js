@@ -25,7 +25,7 @@ exports.createJob = async (req, res) => {
         }
         monthsPassed = Math.max(0, monthsPassed);
         
-        const maxJobsAllowed = 3 + (monthsPassed * 3);
+        const maxJobsAllowed = 3 + (monthsPassed * 3) + (req.user.purchased_slots || 0);
 
         const jobCount = await Job.countDocuments({ posted_by_admin_id: req.user._id });
         if (jobCount >= maxJobsAllowed) {
@@ -215,6 +215,32 @@ exports.getAdminJobs = async (req, res) => {
             { $sort: { createdAt: -1 } }
         ]);
         res.json(jobs);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get Admin job posting stats
+// @route   GET /api/jobs/admin/stats
+// @access  Private/Admin
+exports.getAdminStats = async (req, res) => {
+    try {
+        const userCreatedAt = req.user.createdAt ? new Date(req.user.createdAt) : new Date();
+        const now = new Date();
+        let monthsPassed = (now.getFullYear() - userCreatedAt.getFullYear()) * 12 + (now.getMonth() - userCreatedAt.getMonth());
+        if (now.getDate() < userCreatedAt.getDate()) {
+            monthsPassed--;
+        }
+        monthsPassed = Math.max(0, monthsPassed);
+        
+        const maxJobsAllowed = 3 + (monthsPassed * 3) + (req.user.purchased_slots || 0);
+        const jobsPosted = await Job.countDocuments({ posted_by_admin_id: req.user._id });
+        
+        res.json({
+            maxJobsAllowed,
+            jobsPosted,
+            purchased_slots: req.user.purchased_slots || 0
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
