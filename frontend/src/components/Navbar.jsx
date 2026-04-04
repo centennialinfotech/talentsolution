@@ -34,7 +34,10 @@ const Navbar = () => {
                     {token ? (
                         <div className="flex items-center gap-6">
                             {role === 'admin' ? (
-                                <Link to="/admin/dashboard" className={`text-sm font-medium transition-colors ${location.pathname.includes('/admin') ? 'text-brand-blue' : 'text-text-muted hover:text-brand-blue'}`}>Admin</Link>
+                                <>
+                                    <Link to="/admin/dashboard" className={`text-sm font-medium transition-colors ${location.pathname === '/admin/dashboard' ? 'text-brand-blue' : 'text-text-muted hover:text-brand-blue'}`}>Admin</Link>
+                                    <Link to="/admin/candidates" className={`text-sm font-medium transition-colors ${location.pathname === '/admin/candidates' ? 'text-brand-blue' : 'text-text-muted hover:text-brand-blue'}`}>All Candidates</Link>
+                                </>
                             ) : (
                                 <>
                                     <Link to="/profile" className={`text-sm font-medium transition-colors ${location.pathname === '/profile' ? 'text-brand-blue' : 'text-text-muted hover:text-brand-blue'}`}>Profile</Link>
@@ -71,7 +74,10 @@ const Navbar = () => {
                     {token ? (
                         <>
                             {role === 'admin' ? (
-                                <Link to="/admin/dashboard" onClick={() => setIsMenuOpen(false)} className="text-sm font-medium text-text-muted">Admin</Link>
+                                <>
+                                    <Link to="/admin/dashboard" onClick={() => setIsMenuOpen(false)} className="text-sm font-medium text-text-muted">Admin</Link>
+                                    <Link to="/admin/candidates" onClick={() => setIsMenuOpen(false)} className="text-sm font-medium text-text-muted">All Candidates</Link>
+                                </>
                             ) : (
                                 <>
                                     <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="text-sm font-medium text-text-muted">Profile</Link>

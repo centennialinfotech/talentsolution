@@ -160,3 +160,65 @@ exports.getApplicationById = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// @desc    Get all candidates for admin's jobs with pagination
+// @route   GET /api/applications/admin/candidates
+// @access  Private/Admin
+exports.getAllCandidates = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 10;
+        const startIndex = (page - 1) * limit;
+
+        // Find all jobs posted by this admin
+        const jobs = await Job.find({ posted_by_admin_id: req.user._id }).select('_id');
+        const jobIds = jobs.map(job => job._id);
+
+        const total = await Application.countDocuments({ job_id: { $in: jobIds } });
+
+        const applications = await Application.find({ job_id: { $in: jobIds } })
+            .populate('job_id', 'title role job_id')
+            .populate({
+                path: 'user_id',
+                select: 'first_name last_name email phone location_city experience_years degree',
+            })
+            .sort({ createdAt: -1 })
+            .skip(startIndex)
+            .limit(limit);
+
+        res.json({
+            success: true,
+            count: applications.length,
+            total,
+            page,
+            pages: Math.ceil(total / limit),
+            data: applications
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Delete application (Admin)
+// @route   DELETE /api/applications/:id
+// @access  Private/Admin
+exports.deleteApplication = async (req, res) => {
+    try {
+        const application = await Application.findById(req.params.id)
+            .populate('job_id');
+
+        if (!application) {
+            return res.status(404).json({ message: 'Application not found' });
+        }
+
+        // Verify that the job belongs to the admin
+        if (application.job_id.posted_by_admin_id.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Not authorized to delete this application' });
+        }
+
+        await application.deleteOne();
+        res.json({ success: true, message: 'Application removed' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

@@ -11,6 +11,7 @@ import { Toaster } from 'react-hot-toast';
 import Profile from './pages/Profile';
 import JobDetail from './pages/JobDetail';
 import AdminUserProfile from './pages/AdminUserProfile';
+import AllCandidates from './pages/AllCandidates';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -41,6 +42,15 @@ function App() {
             element={
               <ProtectedRoute adminOnly={true}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/candidates"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AllCandidates />
               </ProtectedRoute>
             }
           />
