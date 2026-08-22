@@ -120,9 +120,33 @@ const Profile = () => {
             updated[index] = { ...updated[index], [field]: value };
             return { ...prev, work_experiences: updated };
         });
-        if (errors[`exp_${index}_${field}`]) {
-            setErrors(prev => ({ ...prev, [`exp_${index}_${field}`]: '' }));
-        }
+
+        const currentYear = new Date().getFullYear();
+        setErrors(prev => {
+            const newErrs = { ...prev };
+            delete newErrs[`exp_${index}_${field}`];
+
+            if (field === 'start_year') {
+                if (!value) {
+                    newErrs[`exp_${index}_start_year`] = 'Please fill out Start Year';
+                } else if (Number(value) > currentYear) {
+                    newErrs[`exp_${index}_start_year`] = `Start Year cannot exceed current year (${currentYear})`;
+                }
+            }
+
+            if (field === 'end_year') {
+                const valStr = String(value || '').trim().toLowerCase();
+                if (value && !['present', 'current'].includes(valStr)) {
+                    const endY = Number(value);
+                    if (isNaN(endY)) {
+                        newErrs[`exp_${index}_end_year`] = 'End Year must be a number or "Present"';
+                    } else if (endY > currentYear) {
+                        newErrs[`exp_${index}_end_year`] = `End Year cannot exceed current year (${currentYear})`;
+                    }
+                }
+            }
+            return newErrs;
+        });
     };
 
     const handleSave = async (e) => {
@@ -153,11 +177,12 @@ const Profile = () => {
             errs.experience_years = 'Experience cannot be negative';
         }
 
-        if (Number(profile.experience_years) > 0 && !String(profile.current_company || '').trim()) {
+        if (!String(profile.current_company || '').trim()) {
             errs.current_company = 'Please fill out Current Organization';
         }
 
         // Work Experiences High to Low Validation
+        const currentYear = new Date().getFullYear();
         const exps = profile.work_experiences || [];
         exps.forEach((exp, idx) => {
             if (!String(exp.company_name || '').trim()) {
@@ -168,10 +193,18 @@ const Profile = () => {
             }
             if (!exp.start_year) {
                 errs[`exp_${idx}_start_year`] = 'Please fill out Start Year';
+            } else if (Number(exp.start_year) > currentYear) {
+                errs[`exp_${idx}_start_year`] = `Start Year cannot exceed current year (${currentYear})`;
             }
-            if (exp.end_year && exp.end_year !== 'Present') {
-                if (Number(exp.start_year) > Number(exp.end_year)) {
-                    errs[`exp_${idx}_start_year`] = 'Start Year cannot be greater than End Year';
+
+            if (exp.end_year && !['present', 'current'].includes(String(exp.end_year).trim().toLowerCase())) {
+                const endY = Number(exp.end_year);
+                if (!isNaN(endY)) {
+                    if (endY > currentYear) {
+                        errs[`exp_${idx}_end_year`] = `End Year cannot exceed current year (${currentYear})`;
+                    } else if (exp.start_year && Number(exp.start_year) > endY) {
+                        errs[`exp_${idx}_start_year`] = 'Start Year cannot be greater than End Year';
+                    }
                 }
             }
         });
@@ -530,7 +563,7 @@ const Profile = () => {
                                         onChange={handleChange}
                                         error={errors.current_company}
                                         placeholder="Hyperion Tech Inc."
-                                        required={Number(profile.experience_years) > 0}
+                                        required
                                     />
                                 </div>
 
@@ -595,6 +628,7 @@ const Profile = () => {
                                                     value={exp.end_year}
                                                     onChange={(e) => handleExperienceChange(idx, 'end_year', e.target.value)}
                                                     placeholder="Present or 2024"
+                                                    error={errors[`exp_${idx}_end_year`]}
                                                 />
                                             </div>
 
